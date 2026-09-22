@@ -132,6 +132,35 @@ bool contactNoExists(long long int contact_no, const string& ignored_employee_id
     return false;
 }
 
+void showThankYou() {
+    cout << "\n\t\t\tThank you!\n";
+}
+
+bool confirmExit() {
+    char confirmation;
+    cout << "\n\t\t\tAre you sure you want to exit? (Y/N): ";
+    cin >> confirmation;
+    return confirmation == 'Y' || confirmation == 'y';
+}
+
+void printEmployeeBox(const vector<string>& fields, int record_number = 0) {
+    cout << "\n\t+======================================================================+\n";
+    if (record_number > 0) {
+        cout << "\t|                           EMPLOYEE " << record_number;
+    } else {
+        cout << "\t|                         EMPLOYEE RECORD";
+    }
+    cout << "                              |\n";
+    cout << "\t+----------------------------------------------------------------------+\n";
+    cout << "\t| Name          : " << fields[0] << "\n";
+    cout << "\t| Employee ID   : " << fields[1] << "\n";
+    cout << "\t| Department    : " << fields[2] << "\n";
+    cout << "\t| Email         : " << fields[3] << "\n";
+    cout << "\t| Contact No.   : " << fields[4] << "\n";
+    cout << "\t| Address       : " << fields[5] << "\n";
+    cout << "\t+----------------------------------------------------------------------+\n";
+}
+
 class Employee {
 private:
     string name, employee_id, department, address, email_id;
@@ -205,6 +234,7 @@ void Employee::menu() {
                 break;
             case 2: 
                 display(); 
+                showThankYou();
                 cout << "\n\t\t\tPress Enter to continue...";
                 cin.ignore();
                 cin.get();
@@ -212,14 +242,20 @@ void Employee::menu() {
             case 3: modify(); break;
             case 4:
                 search();
+                showThankYou();
                 cout << "\n\t\t\tPress Enter to continue...";
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
                 cin.get();
                 break;
             case 5: deleteEmployee(); break;
             case 6:
-                cout << "\n\t\t\t Exiting Program...\n";
-                exit(0);
+                if (confirmExit()) {
+                    cout << "\n\t\t\t Exiting Program...\n";
+                    showThankYou();
+                    exit(0);
+                }
+                cout << "\n\t\t\tExit cancelled.\n";
+                break;
             default:
                 cout << "\n\t\t\t Invalid Choice... Try Again.\n";
                 cin.ignore();
@@ -283,6 +319,7 @@ void Employee::insert() {
     file.close();
     
     cout << "\n\t\t\tRecord Added Successfully!\n";
+    showThankYou();
 }
 
 // Display All Employee Records
@@ -291,7 +328,7 @@ void Employee::display() {
     file.open(FILENAME, ios::in);
     
     if (!file) {
-        cout << "\n\t\tNo Data is Present...\n";
+        cout << "\n\t\tInvalid Employee ID\n";
         return;
     }
 
@@ -303,20 +340,7 @@ void Employee::display() {
             continue;
         }
 
-        name = fields[0];
-        employee_id = fields[1];
-        department = fields[2];
-        email_id = fields[3];
-        contact_no = stoll(fields[4]);
-        address = fields[5];
-
-        cout << "\n\tEmployee No.: " << ++total;
-        cout << "\n\tName: " << name;
-        cout << "\n\tEmployee ID: " << employee_id;
-        cout << "\n\tDepartment: " << department;
-        cout << "\n\tEmail Id: " << email_id;
-        cout << "\n\tContact No.: " << contact_no;
-        cout << "\n\tAddress: " << address << "\n";
+        printEmployeeBox(fields, ++total);
 
         if (total % 5 == 0) {
             cout << "\n\tPress Enter to continue...";
@@ -326,7 +350,7 @@ void Employee::display() {
     }
 
     if (total == 0) {
-        cout << "\n\t\tNo Data Found...\n";
+        cout << "\n\t\tInvalid Employee ID\n";
     }
 
     file.close();
@@ -344,13 +368,24 @@ void Employee::modify() {
     
     file.open(FILENAME, ios::in);
     if (!file) {
-        cout << "\n\t\t\tNo Data is Present..";
+        cout << "\n\t\t\tInvalid Employee ID";
         file.close();
         return;
     }
     
-    cout << "\nEnter Employee ID of the Employee you want to modify: ";
+    cout << "\nEnter Employee ID of the Employee you want to modify (0 to Exit): ";
     cin >> employee_id_to_modify;
+
+    if (employee_id_to_modify == "0") {
+        if (confirmExit()) {
+            cout << "\n\t\t\tModify cancelled.\n";
+            showThankYou();
+            file.close();
+            return;
+        }
+        cout << "\n\t\t\tExit cancelled. Enter an Employee ID to modify.\n";
+        cin >> employee_id_to_modify;
+    }
     
     file1.open(TEMP_FILENAME, ios::out | ios::trunc);
     
@@ -389,15 +424,35 @@ void Employee::modify() {
             cout << "\t\t\t4. Email\n";
             cout << "\t\t\t5. Contact Number\n";
             cout << "\t\t\t6. Address\n";
+            cout << "\t\t\t 0. Exit\n";
             cout << "\t\t\tChoose a field: ";
             cin >> field_choice;
-            while (cin.fail() || field_choice < 1 || field_choice > 6) {
+            while (cin.fail() || field_choice < 0 || field_choice > 6) {
                 cin.clear();
                 cin.ignore(numeric_limits<streamsize>::max(), '\n');
-                cout << "\t\t\tInvalid choice. Choose 1-6: ";
+                cout << "\t\t\tInvalid choice. Choose 0-6: ";
                 cin >> field_choice;
             }
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+            if (field_choice == 0) {
+                if (confirmExit()) {
+                    file1 << line << "\n";
+                    cout << "\n\t\t\tModify cancelled.\n";
+                    showThankYou();
+                    continue;
+                }
+                cout << "\n\t\t\tExit cancelled. Choose a field to edit.\n";
+                cout << "\t\t\tChoose a field: ";
+                cin >> field_choice;
+                while (cin.fail() || field_choice < 1 || field_choice > 6) {
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    cout << "\t\t\tInvalid choice. Choose 1-6: ";
+                    cin >> field_choice;
+                }
+                cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            }
 
             switch (field_choice) {
                 case 1:
@@ -451,11 +506,12 @@ void Employee::modify() {
             writeEmployeeCsv(file1, name, employee_id, department, email_id, contact_no, address);
             found++;
             cout << "\n\t\t\tRecord Updated Successfully!\n";
+            showThankYou();
         }
     }
 
     if (found == 0) {
-        cout << "\n\n\t\t\t Employee ID Not Found....";
+        cout << "\n\n\t\t\t Invalid Employee ID\n";
     }
     
     file1.close();
@@ -471,37 +527,44 @@ void Employee::search() {
 
     file.open(FILENAME, ios::in);
     if (!file) {
-        cout << "\n-------------------------------------------------------------------------------------------------------" << endl;
-        cout << "------------------------------------ Employee Search Data --------------------------------------------" << endl;
-        cout << "\n\t\t\tNo Data is Present... " << endl;
+        cout << "\n\t+======================================================================+\n";
+        cout << "\t|                         SEARCH EMPLOYEE RECORD                     |\n";
+        cout << "\t+----------------------------------------------------------------------+\n";
+        cout << "\n\t\t\tInvalid Employee ID" << endl;
         return;
     }
 
     string employee_id_to_search;
-    cout << "\n-------------------------------------------------------------------------------------------------------" << endl;
-    cout << "------------------------------------ Employee Search Table --------------------------------------------" << endl;
-    cout << "\nEnter Employee ID of the Employee you want to search: ";
+    cout << "\n\t+======================================================================+\n";
+    cout << "\t|                         SEARCH EMPLOYEE RECORD                     |\n";
+    cout << "\t+----------------------------------------------------------------------+\n";
+    cout << "\nEnter Employee ID of the Employee you want to search (0 to Exit): ";
     cin >> employee_id_to_search;
+
+    if (employee_id_to_search == "0") {
+        if (confirmExit()) {
+            cout << "\n\t\t\tSearch cancelled.\n";
+            showThankYou();
+            file.close();
+            return;
+        }
+        cout << "\n\t\t\tExit cancelled. Enter an Employee ID to search.\n";
+        cin >> employee_id_to_search;
+    }
 
     string line;
     while (getline(file, line)) {
         vector<string> fields = parseCsvLine(line);
         if (fields.size() == 6 && employee_id_to_search == fields[1]) {
-            cout << "\n\n\t\t\tName: " << fields[0] << "\n";
-            cout << "\t\t\tEmployee ID: " << fields[1] << "\n";
-            cout << "\t\t\tDepartment: " << fields[2] << "\n";
-            cout << "\t\t\tEmail Id: " << fields[3] << "\n";
-            cout << "\t\t\tContact No.: " << fields[4] << "\n";
-            cout << "\t\t\tAddress: " << fields[5] << "\n";
+            printEmployeeBox(fields);
             found++;
             break;
         }
     }
     
     if (found == 0) {
-        cout << "\n\t\t\t Employee ID Not Found....";
+        cout << "\n\t\t\t Invalid Employee ID\n";
     }
-
     file.close();
 }
 
@@ -516,19 +579,31 @@ void Employee::deleteEmployee() {
     cout << "------------------------------------ Delete Employee Details ------------------------------------------" << endl;
     file.open(FILENAME, ios::in);
     if (!file) {
-        cout << "\n\t\t\tNo Data is Present..";
+        cout << "\n\t\t\tInvalid Employee ID\n";
         file.close();
         return;
     }
 
-    cout << "\nEnter Employee ID of the Employee you want to delete: ";
+    cout << "\nEnter Employee ID of the Employee you want to delete (0 to Exit): ";
     cin >> employee_id_to_delete;
+
+    if (employee_id_to_delete == "0") {
+        if (confirmExit()) {
+            cout << "\n\t\t\tDelete cancelled.\n";
+            showThankYou();
+            file.close();
+            return;
+        }
+        cout << "\n\t\t\tExit cancelled. Enter an Employee ID to delete.\n";
+        cin >> employee_id_to_delete;
+    }
     
     char confirm;
     cout << "\n\t\tAre you sure you want to delete this record? (Y/N): ";
     cin >> confirm;
     if (confirm != 'Y' && confirm != 'y') {
         cout << "\n\t\tDeletion cancelled.\n";
+        showThankYou();
         return;
     }
 
@@ -547,10 +622,12 @@ void Employee::deleteEmployee() {
     }
 
     if (found == 0) {
-        cout << "\n\t\t\t Employee ID Not Found....";
+        cout << "\n\t\t\t Invalid Employee ID\n";
     } else {
         cout << "\n\t\t\tSuccessfully Deleted Data\n";
     }
+
+    showThankYou();
 
     file1.close();
     file.close();
